@@ -1,125 +1,51 @@
-# Journal – TP Fil Rouge 5 (ALTN72) – Couche "V" : Thymeleaf
+# Journal — GareÀVous (ALTN72, 2026-27)
 
-Réponses aux questions du TP 5. Code de référence : ce projet.
+> Supervision d'équipements et suivi d'incidents sur un réseau de transport.
+> *Nom de projet provisoire, à valider en équipe (cf. sujet §12).*
 
-## 5.2 Configuration
-- Dépendance spring-boot-starter-thymeleaf déjà dans le pom.xml. À vérifier, rien à ajouter.
-- Apporte : moteur Thymeleaf + intégration Spring MVC.
-- Auto-configuration : templates cherchés dans `src/main/resources/templates`, suffixe `.html`.
+**Groupe :** Alexandre GINISTY, Florian
 
-## 5.3 Dossiers
-- Templates : `src/main/resources/templates`.
-- Statiques (non transformés) : `src/main/resources/static`.
+---
 
-## 5.4 Changements dans le contrôleur
-- `@RestController` = `@Controller` + `@ResponseBody`.
-- `@RestController` : la valeur retournée est écrite dans le corps HTTP (JSON).
-- `@Controller` : la valeur retournée (String) est le NOM d'un template.
-- Spring passe ce nom au moteur Thymeleaf, qui produit la page HTML.
-- Données vers la vue : objet `Model`.
-- Conséquence : ResponseEntity (4.9) et @RequestBody (JSON) ne servent plus ici.
+## README
 
-## 5.5 – 5.6 Syntaxe, attributs
-- Template = HTML + attributs `th:*`, interprétés côté serveur.
-- `th:*` ou `data-th-*` : équivalents. La 2e forme est du HTML5 valide.
-- `${...}` : expression évaluée sur le Model.
-- `xmlns:th` : facultatif, utile à l'IDE.
+- **Prérequis** : Java 21, Maven 3.9+, MariaDB (XAMPP ou équivalent).
+- **Initialiser la base** : exécuter `db/create.sql` (crée `Base_ALTN72`, le schéma et les données de démonstration).
+- **Configuration** : le mot de passe de la base est lu dans la variable d'environnement `DB_PASSWORD` (vide par défaut sur un poste XAMPP). Aucun secret n'est versionné.
+- **Lancer** : `./mvnw spring-boot:run`
+- **Application déployée** : _à venir (séance déploiement)_
+- **Comptes de test** : _voir section CHOIX TECHNIQUES → Droits par profil (renseignés une fois Spring Security câblé)._
+- **Limites connues** : à ce stade, seuls le modèle, la persistance et le calcul de l'indicateur d'urgence sont en place. Authentification, API REST, vues et lot alpha à venir.
 
-## 5.7 Templates à créer
-- listeProgrammeurs.html, detailsProgrammeur.html, nouveauProgrammeur.html.
+## ARCHITECTURE
 
-## 5.8 Affichage d'un seul programmeur
-- Comment `Model` arrive dans la méthode : il suffit de le déclarer en paramètre. Spring le fournit.
-- Ajouter une donnée : `model.addAttribute("nom", valeur)`.
-- Lien avec `${...}` : le 1er paramètre d'addAttribute = le nom retrouvé dans l'expression. `addAttribute("programmeurs", liste)` → `${programmeurs}`.
-- `${programmeur.nom}` appelle `getNom()`.
-- Prénom du dernier programmeur : `liste.get(liste.size() - 1).getPrenom()`. Attention : liste vide → exception.
-- Template : `<span th:text="${prenomDernierProgrammeur}"></span>`.
-- Étape intermédiaire : laissée en commentaire dans le code.
+- **Dépôt** : _à renseigner._
+- **Découpage en couches** (séparation des responsabilités, SRP) :
+  - `altn72.tpfilrouge.modele` — entités JPA + interfaces `JpaRepository` (accès aux données).
+  - `altn72.tpfilrouge.service` — règles métier (ex. calcul de l'indicateur d'urgence RG3).
+  - `altn72.tpfilrouge.controleur` — à venir (couche web / API REST).
+  - `altn72.tpfilrouge.config` — configuration transverse (ex. horloge injectable).
+- **Schéma** : _à ajouter (docs/architecture.png)._
 
-## 5.9 Affichage des programmeurs
-- Trois éléments :
-  - contrôleur : récupère la liste (service) et la met dans le Model ;
-  - contrôleur : renvoie le nom du template (`"listeProgrammeurs"`, sans `.html`) ;
-  - template : parcourt la liste avec `th:each`.
-- `th:each="programmeur : ${programmeurs}"` : répète la balise (`<tr>`) pour chaque élément. `programmeur` = élément courant.
-- `th:text` : affiche la valeur, HTML échappé.
+## TESTS
 
-### 5.9.1 Squelette HTML
-- Fait : une ligne `<tr>` par programmeur, une colonne par attribut.
-- Noms utilisés : attributs de la classe Java (`langageExpertise`, `livrePrefere`), pas les colonnes SQL.
+- **Stratégie** : tests unitaires sans contexte Spring pour les règles métier (horloge figée via `java.time.Clock`), tests d'intégration à venir.
+- **Commande** : `./mvnw test`
+- **Couvert** : seuils de l'indicateur d'urgence (47 h → vert, 48 h → orange, 71 h → orange, 72 h → rouge — RG3).
+- **Non couvert (encore)** : cycle de vie des incidents, API REST, sécurité — fonctionnalités pas encore développées.
 
-### 5.9.2 Bootstrap
-- Fait : `<link>` Bootstrap dans le `<head>`. Classes `table`, `table-striped`, `btn`...
+## CHOIX TECHNIQUES
 
-## 5.10 Suppression
+- **Droits par profil** (§5.6) : _à compléter (profils pressentis : Responsable d'exploitation / Agent)._
+- **Exceptions** : `@ControllerAdvice` vs `ResponseStatusException` — _choix et justification à venir (séance gestion des exceptions)._
+- **SOLID** : principe(s) appliqué(s) — _à documenter ; une première trace : l'injection par constructeur de l'horloge et des repositories (D — Dependency Inversion)._
+- **Requête SQL native** : _voir section dédiée ci-dessous._
+- **@Transactional** : _à documenter lorsque les cas d'usage d'écriture seront en place._
 
-### 5.10.1 Bouton "Supprimez"
-- Bouton dans un `<form>` par ligne du tableau. URL construite avec `@{/programmeurs/{id}(id=...)}`.
+## LOT ALPHA
 
-### 5.10.2 Que se passe-t-il au clic ? Cause ?
-- Erreur 405 Method Not Allowed.
-- Cause : le formulaire HTML n'envoie que GET ou POST. La route du contrôleur n'accepte que DELETE.
-- Un client HTTP (IntelliJ) peut envoyer DELETE. Pas un formulaire de navigateur.
+- _Deux fonctionnalités transverses à choisir dès le début du projet (§6)._
 
-### Note technique 3 – HiddenHttpMethodFilter
-- Filtre de Spring MVC.
-- Sur une requête POST, lit le paramètre `_method`.
-- Si la valeur est PUT, PATCH ou DELETE : la requête est présentée à Spring avec cette méthode.
-- Le contrôleur voit donc un vrai DELETE ou PUT.
-- Formulaire : `method="POST"` + `<input type="hidden" name="_method" value="DELETE">`.
-- Raccourci Thymeleaf : `th:method="DELETE"` génère les deux.
-- Activation (désactivé par défaut) : `spring.mvc.hiddenmethod.filter.enabled=true` dans application.properties.
+## BILAN
 
-### 5.10.3 Solution + redirection
-- Filtre activé + `th:method="DELETE"`.
-- Contrôleur : `return "redirect:/programmeurs"`.
-- Redirection : réponse 302 + en-tête `Location`. Le navigateur refait un GET /programmeurs.
-- Pourquoi pas `return "listeProgrammeurs"` directement :
-  - la liste n'est pas dans le Model → page vide ou erreur ;
-  - l'URL affichée resterait celle de l'action (/programmeurs/12) ;
-  - F5 rejouerait la suppression.
-- Pattern : Post / Redirect / Get.
-- Id inexistant : `ResponseStatusException` 404.
-
-## 5.11 Ajout
-
-### 5.11.1 Bouton "Ajoutez"
-- Liste : formulaire GET vers `/programmeurs/nouveau`.
-- Contrôleur : met un `Programmeur` vide dans le Model (`nouveauProgrammeur`) → template `nouveauProgrammeur`.
-- Template : `th:object="${nouveauProgrammeur}"` + `th:field="*{nom}"`, etc.
-- Bouton "Enregistrez" : POST vers `/programmeurs`.
-
-### 5.11.2 Succès → liste actualisée
-- `@ModelAttribute` (et non `@RequestBody`) : le formulaire envoie `nom=valeur&...`, pas du JSON.
-- Noms des champs = noms des attributs de `Programmeur`.
-- Service : `ajouterProgrammeur`. Puis `redirect:/programmeurs`.
-- Le service force l'id à null : POST crée toujours.
-
-## 5.12 Modification
-
-### 5.12.1 Bouton "Modifiez"
-- Liste : formulaire GET vers `/programmeurs/{id}`.
-- Contrôleur : charge le programmeur → Model (`programmeurToUpdate`) → template `detailsProgrammeur`.
-- Formulaire prérempli : `th:object` + `th:field` (génère `value`).
-- Validation : POST + `_method=PUT` (`th:method="PUT"`), vers `/programmeurs/{id}`.
-
-### 5.12.2 Succès → liste actualisée
-- `@PutMapping("/{id}")` avec `@ModelAttribute`.
-- Service : `modifierProgrammeur` (@Transactional).
-- Puis `redirect:/programmeurs`.
-- Id inexistant : 404.
-
-## Remarques
-- Salaire : `<input type="number" step="any">`. Le navigateur envoie un point décimal. Avec `type="text"`, "45000,5" → erreur de conversion (400).
-- `server.error.include-message=always` : affiche le message du 404 dans la page d'erreur.
-- Les routes restent celles de 4.8 (REST) : seules les routes de formulaires s'ajoutent (`/nouveau`).
-- Le service n'a pas changé : seuls les commentaires ont été enrichis.
-
-## Routes finales
-- GET /programmeurs → listeProgrammeurs
-- GET /programmeurs/nouveau → nouveauProgrammeur
-- GET /programmeurs/{id} → detailsProgrammeur
-- POST /programmeurs → ajout, redirection
-- PUT /programmeurs/{id} → modification, redirection (via `_method`)
-- DELETE /programmeurs/{id} → suppression, redirection (via `_method`)
+- _À compléter en fin de projet (contributions, difficultés, points à retenir)._
