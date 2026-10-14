@@ -12,9 +12,14 @@
 - **Prérequis** : Java 21, Maven 3.9+, MariaDB (XAMPP ou équivalent).
 - **Initialiser la base** : exécuter `db/create.sql` (crée `Base_ALTN72`, le schéma et les données de démonstration).
 - **Configuration** : le mot de passe de la base est lu dans la variable d'environnement `DB_PASSWORD` (vide par défaut sur un poste XAMPP). Aucun secret n'est versionné.
-- **Lancer** : `./mvnw spring-boot:run`
+- **Lancer** : `./mvnw spring-boot:run` (après avoir initialisé la base).
+- **Lancer les tests** : `./mvnw test`
 - **Application déployée** : _à venir (séance déploiement)_
-- **Comptes de test** : _voir section CHOIX TECHNIQUES → Droits par profil (renseignés une fois Spring Security câblé)._
+- **Comptes de test** (mot de passe commun de démo : `password`, haché bcrypt en base) :
+  - `resp` — Chloé, profil **Responsable d'exploitation**.
+  - `agent` — Karim, profil **Agent**.
+
+  _L'écran de connexion (F1) sera actif une fois Spring Security câblé (séance sécurité) ; les hachés de démo seront alors revalidés._
 - **Limites connues** : à ce stade, seuls le modèle, la persistance et le calcul de l'indicateur d'urgence sont en place. Authentification, API REST, vues et lot alpha à venir.
 
 ## ARCHITECTURE
@@ -39,7 +44,8 @@
 - **Droits par profil** (§5.6) : _à compléter (profils pressentis : Responsable d'exploitation / Agent)._
 - **Exceptions** : `@ControllerAdvice` vs `ResponseStatusException` — _choix et justification à venir (séance gestion des exceptions)._
 - **SOLID** : principe(s) appliqué(s) — _à documenter ; une première trace : l'injection par constructeur de l'horloge et des repositories (D — Dependency Inversion)._
-- **Requête SQL native** : _voir section dédiée ci-dessous._
+- **Requête SQL native** : une seule dans tout le projet, `IncidentRepository.compterIncidentsActifsParStation()` — comptage des incidents actifs regroupés par station (jointure `incident → equipement → station`).
+  - *Analyse critique* : une agrégation multi-tables se lit bien en SQL et reste proche de ce qu'exécute la base, mais ce choix a un coût : la requête est liée au dialecte et aux noms de colonnes physiques (elle casse si le schéma évolue, sans que le compilateur n'alerte), elle renvoie un `Object[]` non typé, et elle échappe au cache et au mapping JPA. Une projection JPQL ou une `interface`-projection serait plus sûre ; on garde ici une native pour illustrer le procédé, comme demandé (§7.6.2).
 - **@Transactional** : _à documenter lorsque les cas d'usage d'écriture seront en place._
 
 ## LOT ALPHA
